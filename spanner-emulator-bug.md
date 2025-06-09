@@ -6,7 +6,7 @@ This reports one or more bugs in Google Cloud Spanner PGEmulator Dockerfile.
 
 Run command to fire up postgres Docker container:
 
-`npm run sart:postgres`
+`npm run start:postgres`
 
 Run command to check that the database accepts connections and can analyze schema:
 
