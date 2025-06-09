@@ -1,0 +1,19 @@
+{
+  "name": "symfony-spanner-test",
+  "version": "1.0.0",
+  "description": "Testing connection Symfony to Google Cloud Spanner",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "start:postgres": "docker run --name postgres-db -p 5432:5432 -e POSTGRES_PASSWORD=password -d postgres",
+    "start:emulator": "docker run --name spanner-db -p 5432:5432 gcr.io/cloud-spanner-pg-adapter/pgadapter-emulator -d spanner",
+    "work:step:1": "bin/console doctrine:schema:update --dump-sql",
+    "work:step:2": "bin/console doctrine:schema:update --force",
+    "work:step:3": "symfony server:start",
+    "fail": "bin/console doctrine:schema:update --dump-sql 2>&1 >err.log"
+  },
+  "author": "Marco Buschini <marco.buschini@gmail.com>",
+  "license": "ISC"
+}
