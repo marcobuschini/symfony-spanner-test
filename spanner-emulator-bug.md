@@ -2,7 +2,7 @@
 
 This reports one or more bugs in Google Cloud Spanner PGEmulator Dockerfile.
 
-## Expected behaviour (with real Posrgres instance)
+## Expected behaviour (with real Postgres instance)
 
 Run command to fire up postgres Docker container:
 
