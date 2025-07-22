@@ -1,0 +1,22 @@
+<?php
+
+$driverClassName = \Doctrine\DBAL\Spanner\SpannerDriver::class; // Assicurati che questo sia il namespace corretto
+echo "Sto cercando di caricare la classe driver: " . $driverClassName . PHP_EOL;
+
+if (!class_exists($driverClassName)) {
+    die("ERRORE: La classe driver '{$driverClassName}' non esiste o non può essere caricata." . PHP_EOL);
+}
+
+$driverReflection = new \ReflectionClass($driverClassName);
+$interfaces = $driverReflection->getInterfaceNames();
+
+echo "La classe driver '{$driverClassName}' implementa le seguenti interfacce:" . PHP_EOL;
+foreach ($interfaces as $interface) {
+    echo "- " . $interface . PHP_EOL;
+}
+
+if (!in_array('Doctrine\DBAL\Driver', $interfaces)) {
+    die("ERRORE: La classe driver non implementa l'interfaccia Doctrine\\DBAL\\Driver.");
+}
+
+// ... Continua con la connessione

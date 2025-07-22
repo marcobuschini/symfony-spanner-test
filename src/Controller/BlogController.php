@@ -62,10 +62,12 @@ final class BlogController extends AbstractController
         // Every template name also has two extensions that specify the format and
         // engine for that template.
         // See https://symfony.com/doc/current/templates.html#template-naming
-        return $this->render('blog/index.'.$_format.'.twig', [
+        return $this->render(
+            'blog/index.'.$_format.'.twig', [
             'paginator' => $latestPosts,
             'tagName' => $tag?->getName(),
-        ]);
+            ]
+        );
     }
 
     /**
@@ -137,10 +139,12 @@ final class BlogController extends AbstractController
             return $this->redirectToRoute('blog_post', ['slug' => $post->getSlug()], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('blog/comment_form_error.html.twig', [
+        return $this->render(
+            'blog/comment_form_error.html.twig', [
             'post' => $post,
             'form' => $form,
-        ]);
+            ]
+        );
     }
 
     /**
@@ -152,10 +156,12 @@ final class BlogController extends AbstractController
     {
         $form = $this->createForm(CommentType::class);
 
-        return $this->render('blog/_comment_form.html.twig', [
+        return $this->render(
+            'blog/_comment_form.html.twig', [
             'post' => $post,
             'form' => $form,
-        ]);
+            ]
+        );
     }
 
     #[Route('/search', name: 'blog_search', methods: ['GET'])]

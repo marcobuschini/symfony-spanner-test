@@ -82,8 +82,7 @@ final class BlogController extends AbstractController
 
         // See https://symfony.com/doc/current/form/multiple_buttons.html
         $form = $this->createForm(PostType::class, $post)
-            ->add('saveAndCreateNew', SubmitType::class)
-        ;
+            ->add('saveAndCreateNew', SubmitType::class);
 
         $form->handleRequest($request);
 
@@ -100,7 +99,9 @@ final class BlogController extends AbstractController
             // See https://symfony.com/doc/current/controller.html#flash-messages
             $this->addFlash('success', 'post.created_successfully');
 
-            /** @var SubmitButton $submit */
+            /**
+ * @var SubmitButton $submit 
+*/
             $submit = $form->get('saveAndCreateNew');
 
             if ($submit->isClicked()) {
@@ -110,10 +111,12 @@ final class BlogController extends AbstractController
             return $this->redirectToRoute('admin_post_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('admin/blog/new.html.twig', [
+        return $this->render(
+            'admin/blog/new.html.twig', [
             'post' => $post,
             'form' => $form,
-        ]);
+            ]
+        );
     }
 
     /**
@@ -126,9 +129,11 @@ final class BlogController extends AbstractController
         // using a PHP attribute: #[IsGranted('show', subject: 'post', message: 'Posts can only be shown to their authors.')]
         $this->denyAccessUnlessGranted(PostVoter::SHOW, $post, 'Posts can only be shown to their authors.');
 
-        return $this->render('admin/blog/show.html.twig', [
+        return $this->render(
+            'admin/blog/show.html.twig', [
             'post' => $post,
-        ]);
+            ]
+        );
     }
 
     /**
@@ -148,10 +153,12 @@ final class BlogController extends AbstractController
             return $this->redirectToRoute('admin_post_edit', ['id' => $post->getId()], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('admin/blog/edit.html.twig', [
+        return $this->render(
+            'admin/blog/edit.html.twig', [
             'post' => $post,
             'form' => $form,
-        ]);
+            ]
+        );
     }
 
     /**
@@ -161,7 +168,9 @@ final class BlogController extends AbstractController
     #[IsGranted('delete', subject: 'post')]
     public function delete(Request $request, Post $post, EntityManagerInterface $entityManager): Response
     {
-        /** @var string|null $token */
+        /**
+ * @var string|null $token 
+*/
         $token = $request->getPayload()->get('token');
 
         if (!$this->isCsrfTokenValid('delete', $token)) {

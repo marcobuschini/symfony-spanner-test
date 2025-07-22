@@ -15,11 +15,11 @@
     },
     "require": {
         "php": ">=8.2",
-        "ext-pdo_sqlite": "*",
         "doctrine/dbal": "^4.0",
         "doctrine/doctrine-bundle": "^2.11",
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^3.0",
+        "google/cloud-spanner": "*",
         "league/commonmark": "^2.1",
         "symfony/apache-pack": "^1.0",
         "symfony/asset": "^7",
@@ -81,6 +81,7 @@
     },
     "autoload": {
         "psr-4": {
+            "Doctrine\\DBAL\\Spanner\\": "Doctrine/DBAL/Spanner/",
             "App\\": "src/"
         }
     },
