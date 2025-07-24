@@ -1,15 +1,14 @@
-# Hera are instructions on how to use Google Cloud Spanner Emulator do develop with Symfony
+# Here are the instructions on how to use Google Cloud Spanner Emulator do develop with Symfony
 
-## Install the docker image for the emulator
+## Install the gcloud command
+This depends on your OS. Have a look at [this link](https://cloud.google.com/sdk/docs/install) for instructions.
 
 ## Start up the emulator
-```gcloud emulators spanner start```
+```
+  ./spanner-emulator-start.sh
+```
 
-## Create a and instance in the emulator
-```gcloud spanner instances create emulator-instance --config=emulator --description=Emulator```
-
-## Create a database in the instance
-```gcloud spanner databases create emulator-database --instance emulator-instance```
-
-## To test for the emulator to work
-```gcloud spanner databases execute-sql emulator-database --instance=emulator-instance --sql="SELECT * FROM INFORMATION_SCHEMA.Tables"```
+## Check that the emulator started correctly
+```
+  ./spanner-emulator-check.sh
+```
