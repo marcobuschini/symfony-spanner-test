@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Schema\View;
 use Doctrine\DBAL\Spanner\SpannerException;
+use Doctrine\DBAL\Types\JsonType;
 
 class SpannerSchemaManager extends \Doctrine\DBAL\Schema\AbstractSchemaManager
 {
@@ -18,7 +19,8 @@ class SpannerSchemaManager extends \Doctrine\DBAL\Schema\AbstractSchemaManager
     
     protected function fetchTableOptionsByTable(string $databaseName, ?string $tableName = null): array
     {
-        $sql = $this->platform->fetchTableOptionsByTable($tableName !== null);
+        $sql = "SELECT TABLE_NAME, PARENT_TABLE_NAME, ON_DELETE_ACTION, TABLE_TYPE, SPANNER_STATE, INTERLEAVE_TYPE, ROW_
+DELETION_POLICY_EXPRESSION FROM INFORMATION_SCHEMA.TABLES";
 
         $params = [$databaseName];
         if ($tableName !== null) {
@@ -88,7 +90,7 @@ SQL;
             $params['schemaName'] = $databaseName;
         }
 
-        $where = join($whereParts, ' AND ');
+        $where = join($whereParts, [' AND ']);
 
         if ($where) {
             $query .= ' WHERE ' . $where;
@@ -132,7 +134,7 @@ SQL;
             $params['schemaName'] = $databaseName;
         }
 
-        $where = join($whereParts, ' AND ');
+        $where = join($whereParts, [' AND ']);
 
         if ($where) {
             $query .= ' WHERE ' . $where;
@@ -257,6 +259,7 @@ SQL;
 
             case 'json':
             case 'text':
+            case 'string':
             case 'varchar':
                 $tableColumn['default'] = $this->parseDefaultExpression($tableColumn['default']);
                 break;

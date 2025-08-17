@@ -9,7 +9,12 @@ use Doctrine\DBAL\Platforms\Exception\NotSupported;
 use Doctrine\DBAL\Platforms\Keywords\KeywordList;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\InvalidArgumentException;
+use Doctrine\DBAL\Exception\InvalidColumnDeclaration;
+use Doctrine\DBAL\Exception\InvalidColumnType;
+use Doctrine\DBAL\Exception\InvalidColumnType\ColumnLengthRequired;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\DBAL\Spanner\SpannerKeywordList;
 use OutOfBoundsException;
@@ -35,13 +40,13 @@ class SpannerPlatform extends AbstractPlatform {
             ]);
 
             $queryParts[] = 'ADD ' . $this->getColumnDeclarationSQL(
-                $column->getQuotedName($this),
+                $column->getObjectName($this)->toSQL($this),
                 $columnProperties,
             );
         }
 
         foreach ($diff->getDroppedColumns() as $column) {
-            $queryParts[] =  'DROP ' . $column->getQuotedName($this);
+            $queryParts[] =  'DROP ' . $column->getObjectName($this)->toSQL($this);
         }
 
         foreach ($diff->getChangedColumns() as $columnDiff) {
@@ -53,8 +58,8 @@ class SpannerPlatform extends AbstractPlatform {
 
             $oldColumn = $columnDiff->getOldColumn();
 
-            $queryParts[] =  'ALTER ' . $oldColumn->getQuotedName($this) . ' '
-                . $this->getColumnDeclarationSQL($newColumn->getQuotedName($this), $newColumnProperties);
+            $queryParts[] =  'ALTER ' . $oldColumn->getObjectName($this)->toSQL($this) . ' '
+                . $this->getColumnDeclarationSQL($newColumn->getObjectName($this)->toSQL($this), $newColumnProperties);
         }
 
         $addedIndexes    = $diff->getAddedIndexes();
@@ -86,7 +91,7 @@ class SpannerPlatform extends AbstractPlatform {
         $tableSql = [];
 
         if (count($queryParts) > 0) {
-            $tableSql[] = 'ALTER TABLE ' . $diff->getOldTable()->getQuotedName($this) . ' '
+            $tableSql[] = 'ALTER TABLE ' . $diff->getOldTable()->getObjectName($this)->toSQL($this) . ' '
                 . implode(', ', $queryParts);
         }
 
@@ -95,6 +100,22 @@ class SpannerPlatform extends AbstractPlatform {
             $tableSql,
             $this->getPostAlterTableIndexForeignKeySQL($diff),
         );
+    }
+
+    /**
+     * Returns the SQL snippet used to declare a binary string column type.
+     *
+     * @param array<string, mixed> $column The column definition.
+     */
+    public function getBinaryTypeDeclarationSQL(array $column): string
+    {
+        $length = $column['length'] ?? null;
+
+        try {
+            return $length ? 'BYTES('.$length.')' : 'BYTES(MAX)';
+        } catch (InvalidColumnType $e) {
+            throw InvalidColumnDeclaration::fromInvalidColumnType($column['name'], $e);
+        }
     }
 
     public function getBigIntTypeDeclarationSQL(array $column): string {
@@ -110,10 +131,26 @@ class SpannerPlatform extends AbstractPlatform {
     }
     
     public function getClobTypeDeclarationSQL(array $column): string {
-        if($column['length'] > 2621440) {
+        $length = $column['length'];
+
+        if($length > 2621440) {
             throw new OutOfBoundsException('CLOB length must be < 2621440');
         }
-        return 'STRING(' . $column['length'] . ')';
+
+        return $length ? 'STRING('.$length.')' : 'STRING(MAX)';
+    }
+
+    protected function getCharTypeDeclarationSQLSnippet(?int $length): string {
+        return $this->getVarcharTypeDeclarationSQLSnippet($length);
+    }
+
+    protected function getVarcharTypeDeclarationSQLSnippet(?int $length): string
+    {
+        if ($length === null) {
+            throw ColumnLengthRequired::new($this, 'STRING');
+        }
+
+        return sprintf('STRING(%d)', $length);
     }
     
     public function getCurrentDatabaseExpression(): string {
@@ -189,5 +226,78 @@ class SpannerPlatform extends AbstractPlatform {
 
     protected function _getCommonIntegerTypeDeclarationSQL(array $column): string {
         return 'INT64';
+    }
+
+    /**
+     * Returns the SQL used to create a table.
+     *
+     * @param list<ColumnProperties> $columns
+     * @param CreateTableParameters  $options
+     *
+     * @return list<string>
+     */
+    protected function _getCreateTableSQL(string $name, array $columns, array $options = []): array
+    {
+        $this->validateCreateTableOptions($options, __METHOD__);
+
+        $columnListSql = $this->getColumnDeclarationListSQL($columns);
+        $indexListSql = [];
+
+        if (! empty($options['uniqueConstraints'])) {
+            foreach ($options['uniqueConstraints'] as $definition) {
+                $columnListSql .= ', ' . $this->getUniqueConstraintDeclarationSQL($definition);
+            }
+        }
+
+        if (! empty($options['primary'])) {
+            $columnListSql .= ', PRIMARY KEY (' . implode(', ', array_unique(array_values($options['primary']))) . ')';
+        }
+
+        $indexListSql = [];
+        if (! empty($options['indexes'])) {
+            foreach ($options['indexes'] as $definition) {
+                $indexListSql[] = 'CREATE ' . $this->getSpannerIndexDeclarationSQL($name, $definition);
+            }
+        }
+
+        $query = 'CREATE TABLE ' . $name .' (' . $columnListSql;
+        $check = $this->getCheckDeclarationSQL($columns);
+
+        if (! empty($check)) {
+            $query .= ', ' . $check;
+        }
+
+        $query .= ')';
+
+        $sql = [$query, ...$indexListSql];
+
+        if (isset($options['foreignKeys'])) {
+            foreach ($options['foreignKeys'] as $definition) {
+                $sql[] = $this->getCreateForeignKeySQL($definition, $name);
+            }
+        }
+
+        return $sql;
+    }
+
+    public function getIndexDeclarationSQL(Index $index): string {
+        throw new UnsupportedException('Cloud Spanner does not support inline creation of indexes', '');
+    }
+
+    public function getSpannerIndexDeclarationSQL(string $table, Index $index): string
+    {
+        $columns = $index->getindexedColumns();
+
+        if (count($columns) === 0) {
+            throw new InvalidArgumentException('Incomplete definition. "columns" required.');
+        }
+
+        $sqlColumns = [];
+        foreach ($columns as $column) {
+            $sqlColumns[] = $column->getColumnName()->getIdentifier()->getValue();
+        }
+
+        return $this->getCreateIndexSQLFlags($index) . 'INDEX ' . $index->getObjectName($this)->getIdentifier()->getValue()
+            . ' ON ' . $table . ' (' . implode(', ', $sqlColumns) . ')' . $this->getPartialIndexSQL($index);
     }
 }
