@@ -12,16 +12,16 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
 use Doctrine\DBAL\Exception\InvalidColumnDeclaration;
 use Doctrine\DBAL\Exception\InvalidColumnType;
-use Doctrine\DBAL\Exception\InvalidColumnType\ColumnLengthRequired;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\DBAL\Spanner\SpannerKeywordList;
-use OutOfBoundsException;
+use Doctrine\DBAL\Spanner\CreateTableParameters;
 use Symfony\Component\TypeInfo\Exception\UnsupportedException;
 
 class SpannerPlatform extends AbstractPlatform {
 
+    /** @deprecated */
     protected function createReservedKeywordsList(): KeywordList {
         return new SpannerKeywordList();
     }
@@ -131,13 +131,7 @@ class SpannerPlatform extends AbstractPlatform {
     }
     
     public function getClobTypeDeclarationSQL(array $column): string {
-        $length = $column['length'];
-
-        if($length > 2621440) {
-            throw new OutOfBoundsException('CLOB length must be < 2621440');
-        }
-
-        return $length ? 'STRING('.$length.')' : 'STRING(MAX)';
+        return 'STRING(MAX)';
     }
 
     protected function getCharTypeDeclarationSQLSnippet(?int $length): string {
@@ -146,11 +140,9 @@ class SpannerPlatform extends AbstractPlatform {
 
     protected function getVarcharTypeDeclarationSQLSnippet(?int $length): string
     {
-        if ($length === null) {
-            throw ColumnLengthRequired::new($this, 'STRING');
-        }
+        $length = $column['length'] ?? 255;
 
-        return sprintf('STRING(%d)', $length);
+        return "STRING($length)";
     }
     
     public function getCurrentDatabaseExpression(): string {
