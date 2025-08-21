@@ -7,6 +7,8 @@ namespace Doctrine\DBAL\Spanner;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\Exception\NotSupported;
 use Doctrine\DBAL\Platforms\Keywords\KeywordList;
+use Doctrine\DBAL\Schema\UniqueConstraint;
+use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\InvalidArgumentException;
@@ -19,6 +21,16 @@ use Doctrine\DBAL\Spanner\SpannerKeywordList;
 use Doctrine\DBAL\Spanner\CreateTableParameters;
 use Symfony\Component\TypeInfo\Exception\UnsupportedException;
 
+/**
+ * @phpstan-type CreateTableParameters = array{
+ *   primary?: list<string>,
+ *   primary_index?: Index,
+ *   indexes?: list<Index>,
+ *   uniqueConstraints?: list<UniqueConstraint>,
+ *   foreignKeys?: list<ForeignKeyConstraint>,
+ *   comment?: string,
+ * }
+ */
 class SpannerPlatform extends AbstractPlatform {
 
     /** @deprecated */

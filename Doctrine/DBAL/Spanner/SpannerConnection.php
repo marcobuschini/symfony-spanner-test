@@ -8,6 +8,8 @@ use Doctrine\DBAL\Driver\Connection as DoctrineConnectionInterface;
 use Google\Cloud\Spanner\Database;
 use Google\Cloud\Spanner\Instance;
 use Google\Cloud\Spanner\SpannerClient;
+use Google\Cloud\Spanner\Session\CacheSessionPool;
+use Google\Auth\Cache\SysVCacheItemPool;
 use Google\Cloud\Spanner\Connection\ConnectionInterface as SpannerConnectionInterface;
 
 final class SpannerConnection implements DoctrineConnectionInterface
@@ -16,11 +18,33 @@ final class SpannerConnection implements DoctrineConnectionInterface
     private Instance $instance;
     private Database $database;
     private SpannerConnectionInterface $connection;
+    private SysVCacheItemPool $authCache;
+    private SysVCacheItemPool $sessionCache;
+    private CacheSessionPool $sessionPool;
 
     public function __construct(string $projectId, string $instanceId, string $databaseId) {
-        $this->spanner = new SpannerClient(['projectId' => $projectId]);
-        $this->instance = $this->spanner->instance($instanceId);
-        $this->database = $this->instance->database($databaseId);
+        $this->authCache = new SysVCacheItemPool();
+        $this->sessionCache = new SysVCacheItemPool();
+
+        $this->spanner = new SpannerClient([
+            'projectId' => $projectId,
+            'authCache' => $this->authCache
+        ]);
+        $this->sessionPool = new CacheSessionPool(
+            $this->sessionCache,
+            [
+                'minSessions' => 10,
+                'maxSessions' => 10
+            ]
+        );
+        $this->database = $this->spanner->connect(
+            $instanceId,
+            $databaseId,
+            [
+                'sessionPool' => $this->sessionPool
+            ]
+        );
+        $this->sessionPool->warmup();
         $this->connection = $this->database->connection();
     }
 
