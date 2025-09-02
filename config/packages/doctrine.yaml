@@ -7,7 +7,7 @@ doctrine:
         #server_version: '16'
         driver_class: Doctrine\DBAL\Spanner\SpannerDriver
         options:
-            projectId: 'emulator'
+            projectId: 'your-project-id'
             instanceId: 'emulator-instance'
             databaseId: 'emulator-database'
         profiling_collect_backtrace: '%kernel.debug%'

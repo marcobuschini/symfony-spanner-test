@@ -33,8 +33,8 @@ final class SpannerConnection implements DoctrineConnectionInterface
         $this->sessionPool = new CacheSessionPool(
             $this->sessionCache,
             [
-                'minSessions' => 10,
-                'maxSessions' => 10
+                'minSessions' => 1,
+                'maxSessions' => 100
             ]
         );
         $this->database = $this->spanner->connect(
