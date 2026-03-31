@@ -13,5 +13,5 @@
     "fail": "bin/console doctrine:schema:update --dump-sql 2>&1 >err.log"
   },
   "author": "Marco Buschini <marco.buschini@gmail.com>",
-  "license": "ISC"
+  "license": "MIT"
 }
