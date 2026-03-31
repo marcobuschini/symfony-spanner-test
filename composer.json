@@ -16,11 +16,13 @@
     "require": {
         "php": ">=8.2",
         "ext-bcmath": "*",
+        "ext-grpc": "*",
         "doctrine/dbal": "^4.0",
         "doctrine/doctrine-bundle": "^2.11",
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^3.0",
         "google/cloud-spanner": "1.104.0",
+        "google/protobuf": "^4.31",
         "league/commonmark": "^2.1",
         "symfony/apache-pack": "^1.0",
         "symfony/asset": "^7",
